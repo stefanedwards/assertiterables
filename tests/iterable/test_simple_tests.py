@@ -5,6 +5,7 @@ from assertiterables.iterables import is_iterable, single, empty
     ('string', False),
     (None, False),
     (b'123', False),
+    (bytearray([0, 1, 2]), False),
     (True, False),
     (False, False),
     (1, False),
@@ -14,3 +15,4 @@ from assertiterables.iterables import is_iterable, single, empty
 ])
 def test_is_iterable(x, outcome):
     assert is_iterable(x) == outcome
+
