@@ -1,5 +1,6 @@
 import pytest
 from typing import Any, Dict, Tuple, cast
+from warnings import warn
 
 def is_iterable(x: Any | None) -> bool:
     """
@@ -37,19 +38,21 @@ def assert_is_iterable(x: Any | None):
         pytest.fail("Object is not an iterable.")
 
 def assert_is_single(container: Any | None) -> Any:
-    """Assert that iterable `container` only contains a single element
+    """
+    Assert that iterable `container` only contains a single element
     and returns that.
 
-    **NB!** This method may iterate through any iterator or generator provided.
-    I.e., this method has an **side effects** that the iterator's/generator's
-    internal "position" may have shifted and a subsequent rewinding/resetting is 
-    required!
+    .. warning::
+        This method may iterate through any iterator or generator provided.
+        I.e., this method has an **side effects** that the iterator's/generator's
+        internal "position" may have shifted and a subsequent rewinding/resetting is 
+        required!
 
     :param container:
         The iterable to test.
 
     :returns:
-        The single element, if it is the only element.
+        A container, iterable, or generator that should contain exactly 1 element.
 
     :raises pytest.fail.Exception:
         Raised when assertion fails.
@@ -107,6 +110,7 @@ def assert_is_empty(container):
     Assert that the iterable `container` contains exactly nothing.
 
     :param container:
+        A container, iterable, or generator that should be empty.
 
     :raises pytest.fail.Exception:
         Raised when assertion fails.
@@ -128,11 +132,57 @@ def assert_is_empty(container):
 
 
 def assert_collection(container, *args):
+    """
+    Assert each item in a collection separately.
+
+    :param container:
+        A container, iterable, or generator to test.
+
+    .. warning::
+        **NB!** This method may iterate through any iterator or generator provided.
+        I.e., this method has an **side effects** that the iterator's/generator's
+        internal "position" may have shifted and a subsequent rewinding/resetting is 
+        required!
+    
+    :raises pytest.fail.Exception:
+        Raised when assertion fails.
+    """
+    __tracebackhide__ = True
     assert_is_iterable(container)
     cont_ = cast(Any, container)
 
+    if len(args) == 0:
+        warn("Use `assert_is_empty` instead of `assert_collection` with an empty argument set.", 
+             category=UserWarning)
+        assert_is_empty(container)
+        return
+
+    container_count = 0
+    iterator = iter(container)
+    passed = [False]*len(args)
+    for expected in args:
+        try:
+            actual = next(iterator)
+        except StopIteration:
+            break
+        container_count += 1
+
+        if callable(expected):
+            if expected.__code__.co_argcount != 1:
+                raise ValueError("All positional arguments to `assert_collection` must either be callable with exactly 1 argument or an object to compare.")
+            pytest.raises
+            expected(actual)
+        else:
+            pass
 
 
+
+
+
+
+
+class AssertCollectionException(pytest.fail.Exception):
+    pass
 
 # Contains Subset Assertion: checks whether a set contains another set as a subset.
 

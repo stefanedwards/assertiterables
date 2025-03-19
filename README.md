@@ -20,6 +20,10 @@ pip install hatch-demo
 
 `hatch-demo` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
 
+## Similar packages
+
+* https://github.com/tobywf/pytest-iterassert
+
 ## Tips and tricks for developing
 
 The package uses `pytest` for unit testing together with codecoverage, 
