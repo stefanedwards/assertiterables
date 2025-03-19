@@ -1,5 +1,6 @@
 from typing import Any, Iterator
 import pytest
+from _pytest.outcomes import Failed
 import collections as col
 from assertiterables.iterables import is_iterable, assert_is_single, assert_is_empty, assert_is_iterable
 
@@ -69,11 +70,8 @@ def test_is_iterable(x, outcome):
     assert is_iterable(x) == outcome
 
     if outcome == False:
-        with pytest.raises(BaseException) as excinfo:
+        with pytest.raises(Failed, match="Object is not an iterable."):
             assert_is_iterable(x)
-        assert excinfo.typename == "Failed"
-        assert excinfo.match("Object is not an iterable.")
-
 
 @pytest.mark.parametrize('x', [
     'string',
@@ -85,15 +83,11 @@ def test_is_iterable(x, outcome):
     1,
 ])
 def test_single_bad_objects(x):
-    with pytest.raises(BaseException) as excinfo:
+    with pytest.raises(Failed, match = "Object is not an iterable."):
         assert_is_single(x)
-    assert excinfo.typename == "Failed"
-    assert excinfo.match("Object is not an iterable.")
 
-    with pytest.raises(BaseException) as excinfo:
+    with pytest.raises(Failed, match="Object is not an iterable."):
         assert_is_empty(x)
-    assert excinfo.typename == "Failed"
-    assert excinfo.match("Object is not an iterable.")
 
 @pytest.mark.parametrize('x', [
    tuple(),
@@ -103,11 +97,8 @@ def test_single_bad_objects(x):
    my_iterator(0)
 ])
 def test_single_empty_objects(x):
-    with pytest.raises(BaseException) as excinfo:
+    with pytest.raises(Failed, match="A single element was expected, but the iterable was empty."):
         assert_is_single(x)
-    assert excinfo.typename == "Failed"
-    assert excinfo.match("A single element was expected, but the iterable was empty.")
-
     assert_is_empty(x)
 
 
@@ -119,15 +110,13 @@ def test_single_empty_objects(x):
    range(3)
 ])
 def test_single_not_singular(x):
-    with pytest.raises(BaseException) as excinfo:
+    with pytest.raises(Failed, match=
+        "A single element was expected, but the iterable contained ([1-9]+)( or more)? items\\."):
         assert_is_single(x)
-    assert excinfo.typename == "Failed"
-    assert excinfo.match("A single element was expected, but the iterable contained ([1-9]+)( or more)? items\\.")
 
-    with pytest.raises(BaseException) as excinfo:
+    with pytest.raises(Failed, match=
+        "The iterable was expected to be empty, but it contained ([1-9]+) items."):
         assert_is_empty(x)
-    assert excinfo.typename == "Failed"
-    assert excinfo.match("The iterable was expected to be empty, but it contained ([1-9]+) items.")
 
 
 @pytest.mark.parametrize('x', [
@@ -136,11 +125,8 @@ def test_single_not_singular(x):
     my_generator(0),
 ])
 def test_single_empty_iterable(x):
-    with pytest.raises(BaseException) as excinfo:
+    with pytest.raises(Failed, match="A single element was expected, but the iterable was empty."):
         assert_is_single(x)
-    assert excinfo.typename == "Failed"
-    assert excinfo.match("A single element was expected, but the iterable was empty.")
-
     assert_is_empty(x)
 
 @pytest.mark.parametrize('x', [
@@ -149,10 +135,9 @@ def test_single_empty_iterable(x):
 ])
 def test_single_generator_range1(x: Any):
     assert 0 == assert_is_single(x)
-    with pytest.raises(BaseException) as excinfo:
+    with pytest.raises(Failed, match=
+        "The iterable was expected to be empty, but it contained 1 items."):
         assert_is_empty(x)
-    assert excinfo.typename == "Failed"
-    assert excinfo.match("The iterable was expected to be empty, but it contained 1 items.")
 
 
 def test_single_generator_my_generator1():
@@ -160,30 +145,27 @@ def test_single_generator_my_generator1():
     assert 0 == assert_is_single(x)
     ## reset generator
     x = my_generator(1)
-    with pytest.raises(BaseException) as excinfo:
+    with pytest.raises(Failed, match=
+        "The iterable was expected to be empty, but it contained 1 items."):
         assert_is_empty(x)
-    assert excinfo.typename == "Failed"
-    assert excinfo.match("The iterable was expected to be empty, but it contained 1 items.")
 
 def test_single_generator_my_generator2():
     x = my_generator(2)
-    with pytest.raises(BaseException) as excinfo:
+    with pytest.raises(Failed, match=
+        'A single element was expected, but the iterable contained 2 or more items.'):
         assert 0 == assert_is_single(x)
-    assert excinfo.typename == "Failed"
-    assert excinfo.match('A single element was expected, but the iterable contained 2 or more items.')
 
     ## reset generator
     x = my_generator(3)
-    with pytest.raises(BaseException) as excinfo:
+    with pytest.raises(Failed, match=
+        "The iterable was not empty as expected."):
         assert_is_empty(x)
-    assert excinfo.typename == "Failed"
-    assert excinfo.match("The iterable was not empty as expected.")
 
 def test_empty_generator_my_generator1():
     x = my_generator(0)
-    with pytest.raises(BaseException) as excinfo:
+    with pytest.raises(Failed, match=
+        "A single element was expected, but the iterable was empty.") as excinfo:
         assert 0 == assert_is_single(x)
-    assert excinfo.match("A single element was expected, but the iterable was empty.")
     ## reset generator
     x = my_generator(0)
     assert_is_empty(x)
@@ -199,10 +181,9 @@ def test_single_singular(x, expected):
     itm = assert_is_single(x)
     assert itm == expected
 
-    with pytest.raises(BaseException) as excinfo:
+    with pytest.raises(Failed, match=
+        "The iterable was expected to be empty, but it contained 1 items."):
         assert_is_empty(x)
-    assert excinfo.typename == "Failed"
-    assert excinfo.match("The iterable was expected to be empty, but it contained 1 items.")
 
 # test more advanced types from collections
 def test_single_collections():
