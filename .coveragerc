@@ -1,0 +1,5 @@
+[run]
+omit = 
+    tests/*
+    assertiterables/__about__.py
+    assertiterables/__init__.py

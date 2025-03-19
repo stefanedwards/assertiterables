@@ -62,4 +62,4 @@ extra-dependencies = [
 check = "mypy --install-types --non-interactive {args:src/assertiterables tests}"
 
 [tool.pytest.ini_options]
-addopts = "--cov=assertiterables --cov-report term --cov-report xml:coverage.xml --cov-config=.coveragerc"
+addopts = "--cov=assertiterables --cov-report term --cov-report xml:coverage.xml --cov-config=.coveragerc --doctest-modules --doctest-continue-on-failure"

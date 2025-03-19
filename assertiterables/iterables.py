@@ -1,10 +1,11 @@
 import pytest
-from typing import Any, List
-
+from typing import Any, Dict, Tuple, cast
 
 def is_iterable(x: Any | None) -> bool:
     """
     Tests whether `x` is an iterable, but *not* `str`, `bytes`, or `bytearray`.
+
+    Other than this, 
 
     :param x:
         The object to test.
@@ -23,11 +24,28 @@ def is_iterable(x: Any | None) -> bool:
     except:
         return False
 
-def single(container: Any | None) -> Any:
+def assert_is_iterable(x: Any | None):
+    """
+    Assert that `x` is an iterable, but *not* `str`, `bytes`, or `bytearray`.
+
+    :param x:
+
+    :raises pytest.fail.Exception:
+        Raised when assertion fails.
+    """
+    if not is_iterable(x):
+        pytest.fail("Object is not an iterable.")
+
+def assert_is_single(container: Any | None) -> Any:
     """Assert that iterable `container` only contains a single element
     and returns that.
 
-    :param x:
+    **NB!** This method may iterate through any iterator or generator provided.
+    I.e., this method has an **side effects** that the iterator's/generator's
+    internal "position" may have shifted and a subsequent rewinding/resetting is 
+    required!
+
+    :param container:
         The iterable to test.
 
     :returns:
@@ -38,20 +56,83 @@ def single(container: Any | None) -> Any:
     
     Example::
         x = [ 5 ]
-        itm = assert.iterable.single(x)
+        itm = assert.iterable.assert_is_single(x)
         assert itm == 5
     """
-    __tracebackhide = True
-    if not is_iterable(container):
-        pytest.fail("Object is not an iterable.")
-    if len(container) == 0:
-        pytest.fail("A single element was expected, but the iterable was empty.")
-    elif len(container) > 1:
-        pytest.fail(f"A single element was expected, but the iterable contained {len(container)} items.")
-    return container[0]
+    __tracebackhide__ = True
+    assert_is_iterable(container)
+    cont_ = cast(Any, container)
 
-def empty(container):
-    assert not container
+    itm = None
+    length = 0
+    has_exact_length = True
+    if issubclass(type(cont_), dict):
+        length,itm = _get_length_and_first_dict(cont_)
+    else:
+        try:
+            length = len(cont_)
+            if length > 0:
+                itm = cont_[0]
+        except TypeError:
+            length,itm,has_exact_length = _get_length_and_first_iterable(cont_)
+    
+    if length == 0:
+        pytest.fail("A single element was expected, but the iterable was empty.")
+    elif length > 1:
+        pytest.fail(f"A single element was expected, but the iterable contained {length if has_exact_length else f'{length} or more'} items.")
+    
+    return itm
+
+def _get_length_and_first_dict(container: Dict[Any,Any]) -> Tuple[int,Any|None]:
+    l = len(container)
+    if l == 0:
+        return (l, None)
+    return (l, next(iter(container.items())))
+
+def _get_length_and_first_iterable(container: Any) -> Tuple[int,Any|None,bool]:
+    iterator = iter(container)
+    try:
+        itm = next(iterator)
+    except StopIteration:
+        return (0,None,True)
+    try:
+        _ = next(iterator)
+    except StopIteration:
+        return (1,itm,True)
+    return (2,itm,False)
+
+
+def assert_is_empty(container):
+    """
+    Assert that the iterable `container` contains exactly nothing.
+
+    :param container:
+
+    :raises pytest.fail.Exception:
+        Raised when assertion fails.
+    """
+    __tracebackhide__ = True
+    assert_is_iterable(container)
+    cont_ = cast(Any, container)
+
+    has_exact_length = True
+    try:
+        length = len(cont_)
+    except TypeError:
+        length,itm,has_exact_length = _get_length_and_first_iterable(cont_)
+
+    if length > 0 and has_exact_length:
+        pytest.fail(f"The iterable was expected to be empty, but it contained {length} items.")
+    elif length > 0:
+        pytest.fail(f"The iterable was not empty as expected.")
+
+
+def assert_collection(container, *args):
+    assert_is_iterable(container)
+    cont_ = cast(Any, container)
+
+
+
 
 # Contains Subset Assertion: checks whether a set contains another set as a subset.
 
