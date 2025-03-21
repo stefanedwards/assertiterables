@@ -2,9 +2,9 @@ from typing import Any, Iterator
 import pytest
 from _pytest.outcomes import Failed
 import collections as col
-from assertiterables.iterables import is_iterable, assert_is_single, assert_is_empty, assert_is_iterable
+from assertiterables import is_iterable, assert_is_single, assert_is_empty, assert_is_iterable
 
-# generator class for testing:
+# iterable class for testing:
 # does not have a __len__ property!
 class my_iterator(object):
     class _iterator(object):
@@ -24,13 +24,14 @@ class my_iterator(object):
     def __iter__(self):
         return my_iterator._iterator(self.n)
 
+# simple generator class for testing:
 def my_generator(n: int) -> Iterator[int]:
     for i in range(n):
         yield i
 
 
 
-def test_my_generator():
+def test_my_iterator():
     assert list(my_iterator(2)) == [0, 1] # type: ignore
     # test that the object is stateless in regard to the returned iterator
     x = my_iterator(4)
@@ -49,8 +50,6 @@ def test_my_generator():
     with pytest.raises(BaseException) as excinfo:
         next(it)
     assert excinfo.typename == "StopIteration"
-
-
 
 
 @pytest.mark.parametrize('x,outcome', [

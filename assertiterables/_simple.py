@@ -1,6 +1,5 @@
 import pytest
 from typing import Any, Dict, Tuple, cast
-from warnings import warn
 
 def is_iterable(x: Any | None) -> bool:
     """
@@ -129,61 +128,3 @@ def assert_is_empty(container):
         pytest.fail(f"The iterable was expected to be empty, but it contained {length} items.")
     elif length > 0:
         pytest.fail(f"The iterable was not empty as expected.")
-
-
-def assert_collection(container, *args):
-    """
-    Assert each item in a collection separately.
-
-    :param container:
-        A container, iterable, or generator to test.
-
-    .. warning::
-        **NB!** This method may iterate through any iterator or generator provided.
-        I.e., this method has an **side effects** that the iterator's/generator's
-        internal "position" may have shifted and a subsequent rewinding/resetting is 
-        required!
-    
-    :raises pytest.fail.Exception:
-        Raised when assertion fails.
-    """
-    __tracebackhide__ = True
-    assert_is_iterable(container)
-    cont_ = cast(Any, container)
-
-    if len(args) == 0:
-        warn("Use `assert_is_empty` instead of `assert_collection` with an empty argument set.", 
-             category=UserWarning)
-        assert_is_empty(container)
-        return
-
-    container_count = 0
-    iterator = iter(container)
-    passed = [False]*len(args)
-    for expected in args:
-        try:
-            actual = next(iterator)
-        except StopIteration:
-            break
-        container_count += 1
-
-        if callable(expected):
-            if expected.__code__.co_argcount != 1:
-                raise ValueError("All positional arguments to `assert_collection` must either be callable with exactly 1 argument or an object to compare.")
-            pytest.raises
-            expected(actual)
-        else:
-            pass
-
-
-
-
-
-
-
-class AssertCollectionException(pytest.fail.Exception):
-    pass
-
-# Contains Subset Assertion: checks whether a set contains another set as a subset.
-
-# assert subset <= full_set
