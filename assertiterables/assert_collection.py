@@ -1,7 +1,7 @@
-from typing import Any, List, Dict, cast
+from typing import Any, List, Dict, cast, overload
 from warnings import warn
 import pytest
-from _pytest.outcomes import OutcomeException
+from _pytest.outcomes import OutcomeException,Failed
 from assertiterables import assert_is_empty, assert_is_iterable
 
 def assert_collection(container, *args):
@@ -19,6 +19,12 @@ def assert_collection(container, *args):
     
     :raises pytest.fail.Exception:
         Raised when assertion fails.
+
+    Example::
+        assert_collection(range(3),
+            lambda x: x == 0,
+            lambda x: x < 3,
+            lambda x: issubclass(type(x), int))
     """
     __tracebackhide__ = True
     assert_is_iterable(container)
@@ -29,10 +35,10 @@ def assert_collection(container, *args):
              category=UserWarning)
         assert_is_empty(container)
         return
-
-    container_count = 0
+    
+    container_count = -1
     iterator = iter(container)
-    passed = [False]*len(args)
+    passed: List[bool] = [False]*len(args)
     results: List[Any | None] = [None]*len(args)
     for expected in args:
         try:
@@ -54,18 +60,60 @@ def assert_collection(container, *args):
             finally:
                 continue
         else:
-            passed[container_count] = actual == expected 
+            passed[container_count] = actual == expected
+            results[container_count] = {"actual": actual, "expected": expected}
+
+    container_count += 1
+
+    if container_count < len(args):
+        raise AssertCollectionException(passed, results, {
+            "error": "iterable too short",
+            "container": container_count,
+            "args": len(args)
+        })
     
+    try:
+        next(iterator)
+        raise AssertCollectionException(passed, results, {
+            "error": "too few arguments",
+            "container": container_count+1,
+            "args": len(args)
+        })
+    except StopIteration:
+        pass
+
+    if not all(passed):
+        raise AssertCollectionException(passed, results)
 
 
 
+class AssertCollectionException(Failed):
+    def __init__(self, passed: List[bool], results: List[Any | None], extras: Dict[str, Any] | None = None):
+        self.passed = passed
+        self.results = results
+        self.extras = extras
+        self.pytrace = True
+    
+    # TODO: Provide more details on failures.
+    @property
+    def msg(self) -> str: # type: ignore
+        if self.extras is not None and self.extras["error"] == "iterable too short":
+            return f"Expected {self.extras['args']} elements, got only {self.extras['container']}."
+        
+        if self.extras is not None and self.extras["error"] == "too few arguments":
+            return f"Expected {self.extras['args']} elements, got {self.extras['container']} or more."
 
+        failure_count = sum((not passed for passed in self.passed))
+        if failure_count == 0:
+            return "All elements passed. A fault must exist somewhere else."
+        if failure_count == 1:
+            return f"Index {self.passed.index(False)} failed test."
+        if failure_count < len(self.passed):
+            return f"Only {(len(self.passed)-failure_count)}/{len(self.passed)} elements passed their tests."
+        if failure_count == len(self.passed):
+            return f"All {len(self.passed)} elements failed their tests."
 
-
-
-
-class AssertCollectionException(pytest.fail.Exception):
-    pass
+        
 
 # Contains Subset Assertion: checks whether a set contains another set as a subset.
 
