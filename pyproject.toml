@@ -25,13 +25,6 @@ dependencies = [
   "pytest~=8.3",
 ]
 
-dev = [
-  "pytest",
-  "pytest-xdist",
-  "pytest-cov",
-  "coverage",
-]
-
 classifiers = [
   "Development Status :: 1 - Planning",
   "Programming Language :: Python",
@@ -44,6 +37,14 @@ classifiers = [
   "Framework :: Pytest",
   "Intended Audience :: Developers",
   "Topic :: Software Development :: Testing :: Unit",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "pytest-xdist",
+  "pytest-cov",
+  "coverage",
 ]
 
 [project.urls]
